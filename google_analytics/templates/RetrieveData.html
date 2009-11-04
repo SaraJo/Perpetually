@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <title>My First Google Analytics Data Export API Script</title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="gettingStarted.js"></script>
+    <script type="text/javascript">   
+    // Load the Google data JavaScript client library  
+google.load('gdata', '1.x', {packages: ['analytics']});
+
+// Set the callback function when the library is ready  
+google.setOnLoadCallback(init);
+
+  function doLogin(){
+    scope = "http://www.google.com/analytics/feeds";
+    var token = google.accounts.user.login(scope);
+  }
+  
+       function init() {
+
+            myService = new google.gdata.analytics.AnalyticsService('gaExportAPI_acctSample_v1.0');
+            scope = 'https://www.google.com/analytics/feeds';
+            var button = document.getElementById('authButton');
+
+            // Add a click handler to the authorize button.
+            button.onclick = function() {
+                // Test if the user is not authorized
+                if (!google.accounts.user.checkLogin(scope)) {
+                       // Authorize the user.
+                 google.accounts.user.login(scope);
+                } else {
+                    // Log the user out.
+                    google.accounts.user.logout();
+                    getStatus();
+                }
+            }
+        }
+
+
+        function getStatus() {
+            var getAccountButton = document.getElementById('getAccount');
+            getAccountButton.onclick = getAccountFeed;
+
+            var getDataButton = document.getElementById('getData');
+            getDataButton.onclick = getDataFeed;
+
+            var dataControls = document.getElementById('dataControls');
+            var loginButton = document.getElementById('authButton');
+            if (!google.accounts.user.checkLogin(scope)) {
+                dataControls.style.display = 'none';   // hide control div
+                loginButton.innerHTML = 'Access Google Analytics';
+            } else {
+                dataControls.style.display = 'block';  // show control div
+                loginButton.innerHTML = 'Logout';
+            }
+        }
+
+        function handleAccountFeed(result) {
+            // An array of analytics feed entries.
+            var entries = result.feed.getEntries();
+
+            // Create an HTML Table using an array of elements.
+            var outputTable = ['<table><tr>',
+                     '<th>Account Name</th>',
+                     '<th>Profile Name</th>',
+                     '<th>Profile ID</th>',
+                     '<th>Table Id</th></tr>'];
+
+            // Iterate through the feed entries and add the data as table rows.
+            for (var i = 0, entry; entry = entries[i]; ++i) {
+
+                // Add a row in the HTML Table array for each value.
+                var row = [
+      entry.getPropertyValue('ga:AccountName'),
+      entry.getTitle().getText(),
+      entry.getPropertyValue('ga:ProfileId'),
+      entry.getTableId().getValue()
+    ].join('</td><td>');
+                outputTable.push('<tr><td>', row, '</td></tr>');
+            }
+            outputTable.push('</table>');
+
+            // Insert the table into the UI.
+            document.getElementById('outputDiv').innerHTML =
+      outputTable.join('');
+        }
+
+
+    function getDataFeed() {
+        var myFeedUri = 'https://www.google.com/analytics/feeds/data' +
+'?start-date=2009-04-01' +
+'&end-date=2009-04-30' +
+'&dimensions=ga:pageTitle,ga:pagePath' +
+'&metrics=ga:pageviews' +
+'&sort=-ga:pageviews' +
+'&max-results=10' +
+'&ids=' + document.getElementById('tableId').value;
+
+        myService.getDataFeed(myFeedUri, handleDataFeed, handleError);
+    }   
+        
+      
+    function handleError(e) {
+        var error = 'There was an error!\n';
+        if (e.cause) {
+            error += e.cause.status;
+        } else {
+            error.message;
+        }
+        alert(error);
+    }   
+
+	function getAccountFeed() {
+	
+  	var myFeedUri =
+	      'https://www.google.com/analytics/feeds/accounts/default?max-results=50';
+	  myService = new google.gdata.analytics.AnalyticsService('gaExportAPI_acctSample_v1.0');
+	  return myService;
+	 	} 
+function returnFeed()
+
+{
+// Create the analytics service object
+var analyticsService =
+    new google.gdata.analytics.AnalyticsService('iSample_acctSample_v1.0');
+
+// The feed URI that is used for retrieving the analytics accounts
+var feedUri =
+    'https://www.google.com/analytics/feeds/accounts/default?max-results=50';
+
+// callback method to be invoked when getAccountFeed() returns data
+var callback = function(result) {
+
+  // An array of analytics feed entries
+  var entries = result.feed.entry;
+  
+  // create an HTML Table using an array of elements
+  var outputTable = ['<table>'];
+  outputTable.push('<tr>',
+    '<th>Account Name</th>',
+    '<th>Profile Name</th>',
+    '<th>Profile Id</th>',
+    '<th>Table Id</th>',
+    '<th>Page Views</th>',
+    '<th>Content Referrers</th></tr>');
+
+  // Iterate through the feed entries and add the data as table rows
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+
+    // add a row in the HTML Table array for each value
+    var row = [
+      entry.getPropertyValue('ga:AccountName'),
+      entry.getTitle().getText(),
+      entry.getPropertyValue('ga:ProfileId'),
+      entry.getTableId().getValue(),
+      "<a href='#' onclick='getPageTitles(" + entry.getPropertyValue('ga:ProfileId') + ");'>Click Here</a>",  
+      "<a href='#' onclick='getPageReferrers(" + entry.getPropertyValue('ga:ProfileId') + ");'>Click Here</a>"  
+     ].join('</td><td>');
+    outputTable.push('<tr><td>', row, '</td></tr>'); 
+  }
+  outputTable.push('</table>');
+  
+  // print the generated table
+  var ni = document.getElementById('placeHolder');
+var newdiv = document.createElement('div');
+newdiv.innerHTML = outputTable.join('');
+  ni.appendChild(newdiv);
+}
+
+// Error handler
+var handleError = function(error) {
+   var ni = document.getElementById('placeHolder');
+   ni.innterHTML = error;
+}
+
+// Submit the request using the analytics service object
+analyticsService.getAccountFeed(feedUri, callback, handleError);}
+  
+  
+/*
+* Retrieve top 10 page titles, URLs and number of pageviews of each
+*/
+function getPageTitles(tableId){
+// Create the analytics service object
+var analyticsService =
+    new google.gdata.analytics.AnalyticsService('iSample_dataVisits_v1.0');
+
+// The feed URI that is used for retrieving the analytics data
+var feedUri = 'https://www.google.com/analytics/feeds/data' +
+    '?start-date=2009-10-01' +
+    '&end-date=2009-10-31' +
+    '&dimensions=ga:pageTitle,ga:pagePath' +
+    '&metrics=ga:pageviews' +
+    '&sort=-ga:pageviews' +
+    '&max-results=10' +
+    '&ids=ga:' + tableId;
+
+// callback method to be invoked when getDataFeed() returns data
+var callback = function(result) {
+
+  // An array of analytics feed entries
+  var entries = result.feed.entry;
+
+  // create an HTML Table using an array of elements
+  var outputTable = ['<table>'];
+  outputTable.push('<tr><th>Page Title</th><th>Page Path</th><th>Pageviews</th></tr>');
+
+  // Iterate through the feed entries and add the data as table rows
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+
+    // add a row in the HTML Table array
+    if(entry.getValueOf('ga:pageviews') > 200)
+{
+    var row = [
+      entry.getValueOf('ga:pageTitle'),
+      entry.getValueOf('ga:pagePath'),
+      entry.getValueOf('ga:pageviews')
+    ].join('</td><td>');
+    outputTable.push('<tr><td>', row, '</td></tr>'); 
+  }}
+  outputTable.push('</table>'); 
+
+  
+  // print the generated table
+  var ni = document.getElementById('placeHolder2');
+var newdiv = document.createElement('div');
+newdiv.innerHTML = outputTable.join('');
+  ni.appendChild(newdiv);}
+
+// Error handler
+var handleError = function(error) {
+  PRINT(error);
+}
+
+// Submit the request using the analytics service object
+analyticsService.getDataFeed(feedUri, callback, handleError);
+}
+ 
+
+function getPageReferrers(tableId){
+// Create the analytics service object
+var analyticsService =
+    new google.gdata.analytics.AnalyticsService('iSample_dataVisits_v1.0');
+
+// The feed URI that is used for retrieving the analytics data
+var feedUri = 'https://www.google.com/analytics/feeds/data' +
+    '?start-date=2009-10-01' +
+    '&end-date=2009-10-31' +
+    '&dimensions=ga:referralPath,ga:source' +
+    '&metrics=ga:pageviews' +
+    '&sort=-ga:pageviews' +
+    '&max-results=10' +
+    '&ids=ga:' + tableId;
+
+  // callback method to be invoked when getDataFeed() returns data
+  var callback = function(result) {
+
+  // An array of analytics feed entries
+  var entries = result.feed.entry;
+
+  // create an HTML Table using an array of elements
+  var outputTable = ['<table>'];
+  outputTable.push('<tr><th>Page Title</th><th>Page Path</th><th>Pageviews</th></tr>');
+
+  // Iterate through the feed entries and add the data as table rows
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+
+    // add a row in the HTML Table array
+    if(entry.getValueOf('ga:pageviews') > 1)
+{
+    var row = [
+      entry.getValueOf('ga:referralPath'),
+      entry.getValueOf('ga:source'),
+      entry.getValueOf('ga:pageviews')
+    ].join('</td><td>');
+    outputTable.push('<tr><td>', row, '</td></tr>'); 
+  }}
+  outputTable.push('</table>'); 
+
+  
+  // print the generated table
+  var ni = document.getElementById('placeHolder2');
+var newdiv = document.createElement('div');
+newdiv.innerHTML = outputTable.join('');
+  ni.appendChild(newdiv);}
+
+// Error handler
+var handleError = function(error) {
+  PRINT(error);
+}
+
+// Submit the request using the analytics service object
+analyticsService.getDataFeed(feedUri, callback, handleError);
+}
+ </script>
+  </head>
+  <body>
+<div id="placeHolder"></div>
+<div id="placeHolder2"></div>
+   <button id="yermom" onclick="returnFeed();">yer mom is a button</button>
+
+   <button id="yermom" onclick="getPageTitles();">yer mom is a button TOO</button>
+<button id="authButton" onclick="doLogin();">login</button>  
+<div id="dataControls" style="display:none">
+  <p>
+    For this user, retrieve the first 50 accounts with profile ID and table ID
+    <button id="getAccount">Get Account Data</button>
+  </p>
+  <p>
+    For this profile, show top 10 pageviews in descending order:
+    <input type="text" id="tableId"/> (insert Table ID)
+    <button id="getData">Get Report Data</button>
+  </p>
+</div>
+
+    <div id="outputDiv"></div>
+    <img src="dummy.gif" style=":none" alt="required for Google Data"/>
+  </body>
+</html>
