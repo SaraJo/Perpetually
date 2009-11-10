@@ -12,7 +12,8 @@ def get_parse_list(request):
             if link.string is not None:
                 u = top_url(url = link.string, rank = rank, date_added = datetime.datetime.now())
                 u.save()
-                rank = rank + 1
+                rank += 1
+    
             
                               
 
